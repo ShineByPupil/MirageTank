@@ -1,0 +1,266 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>幻影坦克究极版</title>
+		<style>
+			body{background: rgb(240,240,240)}
+			ul{list-style: none;margin: 0;padding: 0}
+			.content{display: inline-block;background: #fff;border-radius: 10px;padding: 20px}
+			.input{position: fixed;top:50%;left: 30px;margin-top: -107px}
+			.result{margin-left: 350px;display: none}
+			.result img{margin-left: 10px;margin-bottom: 10px;width: 450px}
+			.button{margin-top: 20px}
+			.button input{margin-right: 10px;display: none;float: left}
+			.button li:first-child{margin-bottom: 10px}
+		</style>
+	</head>
+
+	<body>
+		<div class="content input">
+			<p>显示的图片,较亮</p>
+			<input id="input1" type="file">
+			<p>隐藏的图片,较暗</p>
+			<input id="input2" type="file">
+			<br>
+			<div class="button">
+				<ul>
+					<li>
+						<input id="quse" type="button" value="去色">
+						<input id="sejie" type="button" value="色阶">
+						<input id="output" type="button" value="结果">
+						<p style="clear: both"></p>
+					</li>
+					<li>
+						<input id="bianhei" type="button" value="变黑">
+						<input id="bianbai" type="button" value="变白">
+						<p style="clear: both"></p>
+					</li>
+				</ul>
+			</div>
+		</div>
+		<div class="content result">
+			<img class="show1">
+			<img class="show2">
+			<br>
+			<img class="quse1">
+			<img class="quse2">
+			<br>
+			<img class="sejie1">
+			<img class="sejie2">
+			<br>
+			<img class="output">
+		</div>
+	</body>
+
+	<script>
+		var img1 = document.createElement("img")
+		var img2 = document.createElement("img")
+		var btn1 = document.getElementById("quse")
+		var btn2 = document.getElementById("sejie")
+		var btn3 = document.getElementById("output")
+		var input1 = document.getElementById("input1")
+		var input2 = document.getElementById("input2")
+		var show1 = document.querySelector("img.show1")
+		var show2 = document.querySelector("img.show2")
+		var quse1 = document.querySelector("img.quse1")
+		var quse2 = document.querySelector("img.quse2")
+		var sejie1 = document.querySelector("img.sejie1")
+		var sejie2 = document.querySelector("img.sejie2")
+		var output = document.querySelector("img.output")
+		
+		document.getElementById("bianhei").onclick = function(){
+			document.querySelector("div.result").style.background = "rgb(0,0,0)"
+		}
+		document.getElementById("bianbai").onclick = function(){
+			document.querySelector("div.result").style.background = "rgb(255,255,255)"
+		}
+		
+		input1.addEventListener("change",function(){
+			document.querySelector("div.result").style.display = "inline-block"
+			btn1.style.display = "block"
+			var reader = new FileReader()
+			reader.readAsDataURL(this.files[0])
+			reader.onload = function(){
+				img1.src = reader.result
+				show1.src = reader.result
+			}
+		})
+		input2.addEventListener("change",function(){
+			document.querySelector("div.result").style.display = "inline-block"
+			btn1.style.display = "block"
+			var reader = new FileReader()
+			reader.readAsDataURL(this.files[0])
+			reader.onload = function(){
+				img2.src = reader.result
+				show2.src = reader.result
+			}
+		})
+		btn1.onclick = function(){
+			quse1.src = Desaturate(img1)
+			quse2.src = Desaturate(img2)
+			img1.src = Desaturate(img1)
+			img2.src = Desaturate(img2)
+			btn2.style.display = "block"
+		}
+		
+		btn2.onclick = function(){
+			sejie1.src = Levels(img1,img2)["output1"]
+			sejie2.src = Levels(img1,img2)["output2"]
+			img1.src = Levels(img1,img2)["output1"]
+			img2.src = Levels(img1,img2)["output2"]
+			btn3.style.display = "block"
+		}
+		btn3.onclick = function(){
+			output.src = MirageTank( img1,img2)
+			document.getElementById("bianhei").style.display = "block"
+			document.getElementById("bianbai").style.display = "block"
+		}
+		//去色
+		function Desaturate(img){
+			var c = document.createElement("canvas")
+			var ctx = c.getContext("2d")
+			c.width = img.width
+			c.height = img.height
+			ctx.drawImage(img,0,0)
+			var data = ctx.getImageData(0,0,c.width,c.height)
+			var R,G,B,max,mix
+			for(var i = 0 ; i < data.data.length ; i+=4 ){
+				R = data.data[i + 0]
+				G = data.data[i + 1]
+				B = data.data[i + 2]
+				if(R > G){
+					max = R
+					mix = G
+				}else{
+					max = G
+					mix = R
+				}
+				if( B > max ){
+					max = B
+				}
+				if( B < mix ){
+					mix = B
+				}
+				data.data[i + 0] = ( mix + max )/2
+				data.data[i + 1] = ( mix + max )/2
+				data.data[i + 2] = ( mix + max )/2
+			}
+			ctx.putImageData(data,0,0)
+			return c.toDataURL()
+		}
+		function FindMixMax(img){
+			var c = document.createElement("canvas")
+			var ctx = c.getContext("2d")
+			c.width = img.width
+			c.height = img.height
+			ctx.drawImage(img,0,0)
+			var data = ctx.getImageData(0,0,c.width,c.height)
+			var R,G,B,Mix=0,Max=0
+			for( var i = 0 ; i < data.data.length ; i+=4 ){
+				R = data.data[ i + 0 ]
+				G = data.data[ i + 1 ]
+				B = data.data[ i + 2 ]
+				if( R < Mix ){
+					Mix = R
+				}	
+				if( R > Max ){
+					Max = R
+				}
+				if( G < Mix ){
+					Mix = G
+				}
+				if( G > Max ){
+					Max = G
+				}
+				if( B < Mix ){
+					Mix = B
+				}
+				if( B > Max ){
+					Max = B
+				}
+			}
+			var result = {"Mix" : Mix,"Max" : Max}
+			return result
+		}
+		function Levels(img1,img2){
+			//img1亮显示，img2暗隐藏
+			var c = document.createElement("canvas")
+			var ctx = c.getContext("2d")
+			c.width = img1.width
+			c.height = img1.height
+			ctx.drawImage(img1,0,0)
+			var data1 = ctx.getImageData(0,0,c.width,c.height)
+			ctx.drawImage(img2,0,0)
+			var data2 = ctx.getImageData(0,0,c.width,c.height)
+			var img1_mix = FindMixMax(img1)["Mix"]//0
+			var img1_change = 128 - img1_mix//128
+			var img2_max = FindMixMax(img2)["Max"]//255
+			var img2_change = 127 - img2_max//-128
+			
+			var R,G,B
+			//img1变亮
+			for( var i = 0 ; i < data1.data.length ; i+=4 ){
+				R = data1.data[ i + 0 ]
+				G = data1.data[ i + 1 ]
+				B = data1.data[ i + 2 ]
+				data1.data[ i + 0 ] = R+(255-R)/255*img1_change
+				data1.data[ i + 1 ] = G+(255-G)/255*img1_change
+				data1.data[ i + 2 ] = B+(255-B)/255*img1_change
+			}
+			//img2压暗
+			for( var i = 0 ; i < data1.data.length ; i+=4 ){
+				R = data2.data[ i + 0 ]
+				G = data2.data[ i + 1 ]
+				B = data2.data[ i + 2 ]
+				data2.data[ i + 0 ] = R+(R)/255*img2_change
+				data2.data[ i + 1 ] = G+(G)/255*img2_change
+				data2.data[ i + 2 ] = B+(B)/255*img2_change
+			}
+			var n = data2.data[ 42 ]
+			ctx.putImageData(data1,0,0)
+			var output1 = c.toDataURL()
+			ctx.putImageData(data2,0,0)
+			var output2 = c.toDataURL()
+			return { "output1" : output1 , "output2" : output2 }
+		}
+		function MirageTank(img1,img2){
+			var c = document.createElement("canvas")
+			c.width = img1.width
+			c.height = img1.height
+			var ctx = c.getContext("2d")
+			ctx.drawImage(img1,0,0)
+			var data1 = ctx.getImageData(0,0,c.width,c.height)
+			ctx.drawImage(img2,0,0,c.width,c.height)
+			var data2 = ctx.getImageData(0,0,c.width,c.height)
+			var data3 = ctx.createImageData(c.width,c.height)
+			var R1,G1,B1,A1;//亮
+			var R2,G2,B2,A2;//暗
+			var R3,G3,B3,A3;
+			for(var i=0;i<data1.data.length;i+=4){
+				//恭喜这里遇到了区间问题，0~255 or 0~1？
+				R1 = data1.data[i + 0] //0~255
+				G1 = data1.data[i + 1] //0~255
+				B1 = data1.data[i + 2] //0~255
+				avg1 = (R1 + G1 + B1) / 3 //0~255
+				R2 = data2.data[i + 0]
+				G2 = data2.data[i + 1]
+				B2 = data2.data[i + 2]
+				avg2 = (R2 + G2 + B2) / 3
+				A3 = avg2 - avg1 + 255 //0~255
+				if (A3 === 0) {
+					A3 = 0.0001
+				}
+				R3 = R2 * 255 / A3 //等同于 R2 / A3 * 255
+				G3 = G2 * 255 / A3
+				B3 = B2 * 255 / A3
+				data3.data[i + 0] = R3
+				data3.data[i + 1] = G3
+				data3.data[i + 2] = B3
+				data3.data[i + 3] = A3
+			}
+			ctx.putImageData(data3,0,0)
+			return c.toDataURL()
+		}
+	</script>
+</html>
